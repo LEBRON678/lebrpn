@@ -2,8 +2,6 @@ from flask import Flask, jsonify, render_template_string
 import sqlite3
 import random
 from datetime import datetime
-import threading
-import time
 
 app = Flask(__name__)
 DB_NAME = "database.db"
@@ -58,12 +56,12 @@ def update_items():
     conn.close()
 
 # -----------------------
-# Automatic daily update
+# Ensure DB is populated before first request
 # -----------------------
-def auto_update():
-    while True:
-        update_items()  # refresh popularity
-        time.sleep(86400)  # every 24 hours
+@app.before_first_request
+def setup():
+    init_db()
+    update_items()
 
 # -----------------------
 # API Routes
@@ -173,10 +171,4 @@ def home():
 # Main
 # -----------------------
 if __name__ == "__main__":
-    init_db()
-    update_items()
-
-    # Start background thread to auto-update popularity daily
-    threading.Thread(target=auto_update, daemon=True).start()
-
     app.run(debug=True, host="0.0.0.0", port=5000)
